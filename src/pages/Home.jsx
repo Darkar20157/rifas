@@ -3,23 +3,26 @@
 import { useState, useEffect } from "react"
 import RaffleBoard from "../components/RaffleBoard"
 import TicketModal from "../components/TicketModal"
-import { getStats } from "../utils/storage"
+import { getTickets } from "../utils/api"
 
 export default function Home() {
   const [selectedTicket, setSelectedTicket] = useState(null)
-  const [stats, setStats] = useState({ total: 1000, available: 1000, pending: 0, sold: 0 })
+  const [tickets, setTickets] = useState([]) // 🧩 ahora guardamos todos los tickets
+  const [stats, setStats] = useState({ total: 0, available: 0, pending: 0, sold: 0 })
+
+  const updateTickets = async () => {
+    const data = await getTickets();
+    setTickets(data);
+    setStats({
+      total: data.length,
+      available: data.filter(t => t.status === "available").length,
+      pending: data.filter(t => t.status === "pending").length,
+      sold: data.filter(t => t.status === "sold").length,
+    });
+  }
 
   useEffect(() => {
-    const updateStats = () => {
-      setStats(getStats())
-    }
-
-    updateStats()
-    window.addEventListener("storage", updateStats)
-
-    return () => {
-      window.removeEventListener("storage", updateStats)
-    }
+    updateTickets()
   }, [])
 
   return (
@@ -48,9 +51,16 @@ export default function Home() {
         </div>
       </div>
 
-      <RaffleBoard onTicketClick={setSelectedTicket} />
+      {/* 🔁 Pasamos los tickets actuales al tablero */}
+      <RaffleBoard tickets={tickets} onTicketClick={setSelectedTicket} />
 
-      {selectedTicket && <TicketModal ticket={selectedTicket} onClose={() => setSelectedTicket(null)} />}
+      {selectedTicket && (
+        <TicketModal
+          ticket={selectedTicket}
+          onClose={() => setSelectedTicket(null)}
+          onUpdate={updateTickets} // 👈 callback para actualizar al reservar
+        />
+      )}
     </div>
   )
 }

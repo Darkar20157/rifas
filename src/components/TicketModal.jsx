@@ -1,20 +1,31 @@
-"use client"
-
 import { useState } from "react"
-import { reserveTicket } from "../utils/storage"
+import { reserveTicket } from "../utils/api"
 
-export default function TicketModal({ ticket, onClose }) {
+export default function TicketModal({ ticket, onClose, onUpdate }) {
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("")
+  const [loading, setLoading] = useState(false)
 
   if (!ticket) return null
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (name.trim() && phone.trim()) {
-      reserveTicket(ticket.number, name, phone)
-      alert(`¡Boleta ${ticket.number} reservada! Espera la confirmación del administrador.`)
-      onClose()
+      setLoading(true)
+      try {
+        await reserveTicket(ticket.number, name, phone)
+
+        alert(`✅ ¡Boleta ${ticket.number} reservada!`)
+        onClose()
+
+        // 🔁 Refrescamos tablero y estadísticas
+        if (onUpdate) await onUpdate()
+      } catch (err) {
+        console.error(err)
+        alert("❌ Error al reservar la boleta. Intenta de nuevo.")
+      } finally {
+        setLoading(false)
+      }
     }
   }
 
@@ -51,8 +62,8 @@ export default function TicketModal({ ticket, onClose }) {
             <button type="button" className="btn-secondary" onClick={onClose}>
               Cancelar
             </button>
-            <button type="submit" className="btn-primary">
-              Reservar Boleta
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? "Enviando..." : "Reservar Boleta"}
             </button>
           </div>
         </form>

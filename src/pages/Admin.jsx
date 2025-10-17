@@ -1,14 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getPendingRequests, confirmTicket, rejectTicket } from "../utils/storage"
+import { getTickets, confirmTicket, rejectTicket } from "../utils/api"
 
 export default function Admin() {
   const [requests, setRequests] = useState([])
 
   useEffect(() => {
-    const loadRequests = () => {
-      setRequests(getPendingRequests())
+    const loadRequests = async () => {
+      const data = await getTickets()
+      setRequests(data.filter(t => t.status === "pending"))
     }
 
     loadRequests()
@@ -29,16 +30,6 @@ export default function Admin() {
     if (confirm(`¿Rechazar la boleta ${number}?`)) {
       rejectTicket(number)
     }
-  }
-
-  const formatDate = (timestamp) => {
-    return new Date(timestamp).toLocaleString("es-ES", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
   }
 
   return (
@@ -72,7 +63,7 @@ export default function Admin() {
                   <strong>Celular:</strong> {request.phone}
                 </p>
                 <p>
-                  <strong>Fecha:</strong> {formatDate(request.timestamp)}
+                  <strong>Fecha:</strong> {(request.timestamp)}
                 </p>
               </div>
 
